@@ -24,7 +24,7 @@ async function performScraping() {
     const pageData = cheerio.load(response.data);
 
 
-    // EXPOSANTS Scraping
+    // CONCERTS Scraping
 
     const dataConcerts = [];
 
@@ -35,7 +35,7 @@ async function performScraping() {
         const dt = data.find(".date").find("time");
         const date_time = dt.attr("datetime");
 
-        if (date_time === undefined) return;
+        if (date_time === undefined) return; // in case of other ".panel-body" section
 
         const date = date_time.split('T')[0];
         const time = date_time.split('T')[1];
@@ -86,6 +86,7 @@ async function performScraping() {
             spectacles : listSpectacles
         }
 
+        // not all concerts have a premiere
         if (premiere !== (undefined || '')) dataConcert.premiere = premiere;
 
 
@@ -94,16 +95,11 @@ async function performScraping() {
     });
 
 
-
-    // // writing the data in JSON file
+    // writing the data in JSON file
     writeInJSONFile(dataConcerts);
 
-    // // creating new xlsx file
-    let file = xlsx.utils.book_new();
-
-    // // auto write in xlsx file : different sheets for Exposants and Sponsors
-    writeInExcelFile(dataConcerts, file, XLSXOutput);
-
+    // auto write in xlsx file
+    writeInExcelFile(dataConcerts);
 
 }
 
@@ -116,7 +112,9 @@ function writeInJSONFile(object) {
 }
 
 
-function writeInExcelFile(object, file, name) {
+function writeInExcelFile(object) {
+    // creating new xlsx file
+    let file = xlsx.utils.book_new();
 
     const transformData = (object) => {
         const data = [];
@@ -125,6 +123,7 @@ function writeInExcelFile(object, file, name) {
             const row = {...obj};
             delete row.spectacles;
             delete row.premiere;
+            // set to "" for the spectacles list
             row.spectacle = "";
             row.url = "";
             data.push(row);
@@ -145,15 +144,14 @@ function writeInExcelFile(object, file, name) {
     // data formatting : by rows
     const transformedConcerts = transformData(object);
 
-    // console.log(JSON.stringify(transformedConcerts));
 
     // creating worksheet
-    const worksheet1 = xlsx.utils.json_to_sheet(transformedConcerts);
+    const worksheet = xlsx.utils.json_to_sheet(transformedConcerts);
+
     // adding worksheet to file
-    xlsx.utils.book_append_sheet(file, worksheet1, "Concerts");
+    xlsx.utils.book_append_sheet(file, worksheet, "Concerts");
 
-
-    xlsx.writeFile(file, name); // write file
+    xlsx.writeFile(file, XLSXOutput); // write file
 
 
     console.log(`File created: ${XLSXOutput}`);
