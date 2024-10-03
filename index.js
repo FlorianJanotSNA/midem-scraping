@@ -68,6 +68,7 @@ async function performScraping() {
         const salleName = salle.find("a").find("span").text().trim()
         const salleLink = URLBase+salle.find("a").attr("href");
 
+        
 
 
         const ville = data.find(".ville-dpt");
@@ -75,24 +76,27 @@ async function performScraping() {
         let villeName = ville.text().trim();
         villeName = villeName.replace(/\s\s+/g, ' ');   // replace spaces, \n and \t with a single space
 
-        console.log(villeLink)
+
+
+        const premiere = data.find(".premiere").find("a").text().trim();
 
 
 
+        const dataConcert = {
+            date : date,
+            time : time,
+            textDateTime : fullDateTime,
+            ville : villeName,
+            villeUrl: villeLink,
+            salle : salleName,
+            salleUrl : salleLink,
+            spectacles : spectacles
+        }
 
-        // const fullData = {
-        //     order: index+1,
-        //     tag: tag,
-        //     location: location,
-        //     domain: domain,
-        //     isNew: isNew,
-        //     luxe_pack_formulation: luxePackFormulation
-        // };
-        // if (logoLink !== undefined) fullData.img = logoLink;
+        if (premiere !== (undefined || '')) dataConcert.premiere = premiere;
 
-        // const dataExposant = {
-        //     [name] : fullData
-        // };
+
+
 
         // dataExposants.push(dataExposant);
     });
