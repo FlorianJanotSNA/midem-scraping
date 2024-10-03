@@ -26,7 +26,7 @@ async function performScraping() {
 
     // EXPOSANTS Scraping
 
-    const dataExposants = [];
+    const dataConcerts = [];
 
     const concerts = pageData(".panel-body");
     concerts.each((index, concert) => {
@@ -40,7 +40,6 @@ async function performScraping() {
         const date = date_time.split('T')[0];
         const time = date_time.split('T')[1];
 
-        console.log(index+": "+date + " | "+time)
 
         const day_title = dt.find(".day-title").text().trim();
         const day = dt.find(".day").text().trim();
@@ -57,8 +56,8 @@ async function performScraping() {
         spectacles.each((index, spectacle) => {
             const spect = {
                 index: index+1,
-                name: pageData(spectacle).text().trim(),
-                link: URLBase+pageData(spectacle).attr('href')
+                spectacle: pageData(spectacle).text().trim(),
+                url: URLBase+pageData(spectacle).attr('href')
             }
             listSpectacles.push(spect);
         });
@@ -68,18 +67,12 @@ async function performScraping() {
         const salleName = salle.find("a").find("span").text().trim()
         const salleLink = URLBase+salle.find("a").attr("href");
 
-        
-
-
         const ville = data.find(".ville-dpt");
         const villeLink = URLBase+ville.find("a").attr("href");
         let villeName = ville.text().trim();
         villeName = villeName.replace(/\s\s+/g, ' ');   // replace spaces, \n and \t with a single space
 
-
-
         const premiere = data.find(".premiere").find("a").text().trim();
-
 
 
         const dataConcert = {
@@ -90,26 +83,26 @@ async function performScraping() {
             villeUrl: villeLink,
             salle : salleName,
             salleUrl : salleLink,
-            spectacles : spectacles
+            spectacles : listSpectacles
         }
 
         if (premiere !== (undefined || '')) dataConcert.premiere = premiere;
 
 
+        dataConcerts.push(dataConcert);
 
-
-        // dataExposants.push(dataExposant);
     });
 
 
+
     // // writing the data in JSON file
-    // writeInJSONFile(objectData);
+    writeInJSONFile(dataConcerts);
 
     // // creating new xlsx file
-    // let file = xlsx.utils.book_new();
+    let file = xlsx.utils.book_new();
 
     // // auto write in xlsx file : different sheets for Exposants and Sponsors
-    // writeInExcelFile(objectData, file, XLSXOutput);
+    writeInExcelFile(dataConcerts, file, XLSXOutput);
 
 
 }
@@ -129,27 +122,36 @@ function writeInExcelFile(object, file, name) {
         const data = [];
 
         object.forEach((obj) => {
-            const name = Object.keys(obj)[0];
-            const details = obj[name];
-
-            const row = { name, ...details }; 
+            const row = {...obj};
+            delete row.spectacles;
+            delete row.premiere;
+            row.spectacle = "";
+            row.url = "";
             data.push(row);
+
+            obj.spectacles.forEach(spectacle => {
+                const rowS = {};
+                rowS.spectacle = spectacle.spectacle;
+                rowS.url = spectacle.url;
+                if (obj.premiere !== '') rowS.premiere = obj.premiere;
+                data.push(rowS);
+            });
+
         });
         return data;
     };
 
 
     // data formatting : by rows
-    const transformedExposants = transformData(object.exposants);
-    const transformedSponsors  = transformData(object.sponsors);
+    const transformedConcerts = transformData(object);
+
+    // console.log(JSON.stringify(transformedConcerts));
 
     // creating worksheet
-    const worksheet1 = xlsx.utils.json_to_sheet(transformedExposants);
+    const worksheet1 = xlsx.utils.json_to_sheet(transformedConcerts);
     // adding worksheet to file
-    xlsx.utils.book_append_sheet(file, worksheet1, "Exposants");
+    xlsx.utils.book_append_sheet(file, worksheet1, "Concerts");
 
-    const worksheet2 = xlsx.utils.json_to_sheet(transformedSponsors);
-    xlsx.utils.book_append_sheet(file, worksheet2, "Sponsors")
 
     xlsx.writeFile(file, name); // write file
 
